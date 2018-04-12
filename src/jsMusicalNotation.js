@@ -9,8 +9,7 @@
 
         create: function(options) {
             const piece = Object.create(this)
-            piece.mm = options.mm
-            piece.ts = options.ts
+            piece.timePerQuarterNote = options.timePerQuarterNote
             return piece
         },
 
@@ -19,27 +18,56 @@
             tracks.forEach(function(track) {
                 piece.raw.push(track)
                 try {
-                    piece.actions.push(piece.createTrackAction(track))
+                    let actions = piece.createTrackAction(track)
+                    if(actions.length) piece.actions = piece.actions.concat(actions)
                 } catch (e) {
                     console.log('Error parsing track | ', e, " | TRACK: " + track)
                 }
             })
-            return {
-                raw: this.raw,
-                actions: this.actions
-            }
+            return this.actions
         },
 
         createTrackAction: function(track) {
 
-            var pitchInformation = this.extractPitchInformationFromTrack(track)
+            const piece = this
+            const pitchInformation = this.extractPitchInformationFromTrack(track)
+            const measures = this.extractMeasureInformationFromTrack(track)
+            let actions = [];
+            let measureStartTime = 0
 
-            var measures = this.extractMeasureInformationFromTrack(track)
+            measures.forEach(function(measure, index) {
+                measureStartTime = index * (piece.timePerQuarterNote * 4)
+                measure.forEach(function(notationCharacter) {
 
-            return {
-                action: 'something',
-                raw: track
-            }
+                    const modifier = notationCharacter[1]
+                    const number = parseInt(notationCharacter[0])
+
+                    if (!is_valid_notation_number(number)) {
+                        throw 'Invalid notation number "' + number + '"';
+                    }
+                    const duration = (piece.timePerQuarterNote * 4) / number
+                    let pitch = pitchInformation.pitch
+                    if (modifier) {
+                        if (modifier === 'w') {
+                            return measureStartTime += duration
+                        } else if(modifier === '#'){
+                            pitch = shiftFrequencyPitch(pitch, 1)
+                        } else if(modifier === 'b'){
+                            pitch = shiftFrequencyPitch(pitch, -1)
+                        } else {
+                            throw 'Invalid notation modifier "' + modifier + '"';
+                        }
+                    }
+                    actions.push({
+                        pitch: pitch,
+                        startTime: measureStartTime,
+                        duration: duration
+                    })
+                    measureStartTime += duration
+                })
+            })
+
+            return actions
 
         },
 
@@ -72,14 +100,6 @@
 
         extractMeasureInformationFromTrack: function(track) {
 
-            let measures = this.separateMeasuresFromTrack(track)
-
-            console.log(measures)
-
-        },
-
-        separateMeasuresFromTrack: function(track) {
-
             let measures = []
             let startingIndex = track.indexOf('~')
             track = track.substr(startingIndex + 1, track.length)
@@ -104,6 +124,10 @@
     }
 
     // Track validation helpers
+
+    function is_valid_notation_number(str) {
+        return [1, 2, 3, 4].indexOf(str) !== -1;
+    }
 
     function is_valid_tone(str) {
         return ["a", "b", "c", "d", "e", "f", "g"].indexOf(str) !== -1;
@@ -152,6 +176,10 @@
 
     function shiftFrequencyOctave(freq, octave) {
         return freq * Math.pow(semiTone, octave * 12)
+    }
+
+    function shiftFrequencyPitch(freq, steps) {
+        return freq * Math.pow(semiTone, steps)
     }
 
     function calculateFrequencyFromLetter(letter, octave) {
