@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>JS Musical Notation Test</title>
+</head>
+
+<body>
+    <script type="text/javascript" src="vendor/lodash.min.js"></script>
+    <script type="text/javascript" src="vendor/jquery.min.js"></script>
+    <script type="text/javascript" src="src/jsMusicalNotation.js"></script>
+    <script>
+
+        var piece = JsMusicalPiece.create({
+            mm : 120,
+            ts : '4/4'
+        });
+
+        var tracks = piece.createTracks([
+            'c5  ~',
+            'b5  ~ 3 3 3  -',
+            'a5  ~ 4      -',
+            'g4  ~ 1      - - - - - - -',
+            'f4# ~ 2   2  - - - - - - -',
+            'e4# ~ 2#  2b - - - - - - -',
+            'd4  ~ 4 4 2  - - - - - - -',
+            'c4# ~ 2w  2  - - - - - - -',
+            'b4  ~ 1w     - - - - - - -',
+            'a4  ~ 1w     - - - - - - -',
+            'g3  ~',
+            'f3  ~',
+            'e3  ~'
+        ]);
+
+        console.log(tracks)
+
+    </script>
+</body>
+
+</html>
